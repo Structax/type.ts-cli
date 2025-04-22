@@ -1,0 +1,17 @@
+{
+  "type": "module",
+  "scripts": {
+    "dev": "tsx commands/dev.ts",
+    "check": "tsx commands/check.ts"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2",
+    "ts-morph": "^25.0.1",
+    "zod": "^3.22.2"
+  },
+  "devDependencies": {
+    "@types/node-fetch": "^2.6.12",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.3"
+  }
+}
