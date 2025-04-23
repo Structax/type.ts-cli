@@ -14,22 +14,22 @@ export const defineAPI = <
   api: APIType<I, H>
 ): APIType<I, H> => {
   if (typeof api !== "object" || api === null) {
-    throw new Error("defineAPI: api はオブジェクトである必要があります")
+    throw new Error("defineAPI: api must be an object")
   }
 
   const keys = Object.keys(api)
   if (!("input" in api)) {
-    throw new Error("defineAPI: 'input' フィールドが必要です")
+    throw new Error("defineAPI: 'input' field is required")
   }
   if (!("handler" in api)) {
-    throw new Error("defineAPI: 'handler' フィールドが必要です")
+    throw new Error("defineAPI: 'handler' field is required")
   }
   if (keys.length !== 2) {
-    throw new Error("defineAPI: 許可されていないフィールドが含まれています")
+    throw new Error("defineAPI: Unallowed fields are included")
   }
 
   if (!(api.input instanceof z.ZodObject)) {
-    throw new Error("defineAPI: 'input' は z.ZodObject 型である必要があります")
+    throw new Error("defineAPI: 'input' must be of type z.ZodObject")
   }
 
   // async チェックは削除 ✅ 実行時は型とPromiseベースで保証すればOK

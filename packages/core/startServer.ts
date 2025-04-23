@@ -1,8 +1,5 @@
 import { createServer } from "http"
 import { parse as parseUrl } from "url"
-import { readFileSync } from "fs"
-import { join, extname } from "path"
-import { z } from "zod"
 import type { AppError } from "./defineError"
 import { resolveRoutes, RouteEntry } from "./resolveRoutes"
 import { toAPIError } from "./toAPIError"
@@ -16,7 +13,9 @@ export const startServer = (routesDir: string, port = 3000): void => {
     const parsed = parseUrl(req.url || "", true)
     const path = parsed.pathname
 
-    const match = routes.find(route => route.method === method && route.path === path)
+    const match = routes.find(route => {
+      return route.method === method && route.path === path
+    })
 
     if (!match) {
       res.writeHead(404, { "Content-Type": "application/json" })

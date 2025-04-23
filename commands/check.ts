@@ -30,16 +30,16 @@ const checkFile = (filePath: string): void => {
   const namedExports = Array.from(exportStatements.keys())
 
   if (hasDefaultExport) {
-    violations.push(`❌ [${filePath}] default export は使用禁止です`)
+    violations.push(`❌ [${filePath}] Default exports are not allowed`)
   }
 
   if (!namedExports.includes("api")) {
-    violations.push(`❌ [${filePath}] 'export const api = { ... }' が存在しません`)
+    violations.push(`❌ [${filePath}] 'export const api = { ... }' is missing`)
     return
   }
 
   if (namedExports.length !== 1) {
-    violations.push(`❌ [${filePath}] 'api' 以外の export が存在しています: ${namedExports.join(", ")}`)
+    violations.push(`❌ [${filePath}] Exports other than 'api' are present: ${namedExports.join(", ")}`)
   }
 
   const apiDecls = exportStatements.get("api")
@@ -51,7 +51,7 @@ const checkFile = (filePath: string): void => {
     .getFirstDescendantByKind(SyntaxKind.ObjectLiteralExpression)
 
   if (!obj) {
-    violations.push(`❌ [${filePath}] api の値がオブジェクトではありません`)
+    violations.push(`❌ [${filePath}] The value of api is not an object`)
     return
   }
 
@@ -59,17 +59,17 @@ const checkFile = (filePath: string): void => {
   const handlerProp = obj.getProperty("handler")
 
   if (!inputProp) {
-    violations.push(`❌ [${filePath}] api.input が定義されていません`)
+    violations.push(`❌ [${filePath}] api.input is not defined`)
   } else {
     const initializer = (inputProp as any).getInitializer()
     const text = initializer?.getText()
     if (!text?.startsWith("z.object") && !text?.includes("ZodObject")) {
-      violations.push(`❌ [${filePath}] api.input は z.object または ZodObject である必要があります`)
+      violations.push(`❌ [${filePath}] api.input must be a z.object or ZodObject`)
     }
   }
 
   if (!handlerProp) {
-    violations.push(`❌ [${filePath}] api.handler が定義されていません`)
+    violations.push(`❌ [${filePath}] api.handler is not defined`)
   } else {
     const initializer = (handlerProp as any).getInitializer()
     const isAsync = initializer?.isAsync?.()
@@ -77,10 +77,10 @@ const checkFile = (filePath: string): void => {
     const firstParam = params?.[0]?.getName?.()
 
     if (!isAsync) {
-      violations.push(`❌ [${filePath}] api.handler は async 関数である必要があります`)
+      violations.push(`❌ [${filePath}] api.handler must be an async function`)
     }
     if (firstParam !== "{ input }" && firstParam !== "args") {
-      violations.push(`❌ [${filePath}] api.handler の引数は { input } である必要があります`)
+      violations.push(`❌ [${filePath}] api.handler's argument must be { input } or args`)
     }
   }
 }
