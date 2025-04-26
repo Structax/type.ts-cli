@@ -1,58 +1,43 @@
 import { readdirSync, statSync } from "fs"
-import { join, extname, basename, relative, sep, resolve } from "path" // ← ✅ resolve を追加！
+import { join, resolve } from "path"
 
-export type RouteEntry = {
-  filePath: string
-  method: "GET" | "POST" | "PUT" | "DELETE"
-  path: string
-}
+export type APIHandler = (input: any) => Promise<any>
 
-const METHOD_SUFFIXES = [".get.ts", ".post.ts", ".put.ts", ".delete.ts"] as const
-const METHOD_MAP = {
-  ".get.ts": "GET",
-  ".post.ts": "POST",
-  ".put.ts": "PUT",
-  ".delete.ts": "DELETE",
-} as const
+export const resolveRoutes = (baseDir: string): Map<string, APIHandler> => {
+  const routes = new Map<string, APIHandler>()
 
-export const resolveRoutes = (baseDir: string): RouteEntry[] => {
-  const entries: RouteEntry[] = []
-
-  const walk = (dir: string) => {
-    const items = readdirSync(dir)
-
-    for (const item of items) {
-      const fullPath = join(dir, item)
+  const walk = async (dir: string) => {
+    for (const file of readdirSync(dir)) {
+      const fullPath = join(dir, file)
       const stats = statSync(fullPath)
 
       if (stats.isDirectory()) {
         walk(fullPath)
-        continue
-      }
+      } else if (file.match(/\.(get|post|put|delete)\.ts$/)) {
+        const methodMatch = file.match(/\.(get|post|put|delete)\.ts$/)
+        const method = methodMatch ? methodMatch[1].toUpperCase() : ""
+        const relativePath = fullPath
+          .replace(baseDir, "")
+          .replace(/\\/g, "/")
+          .replace(/\.(get|post|put|delete)\.ts$/, "")
+          .replace(/\[([^\]]+)\]/g, ":$1")
+        const routePath = relativePath === "" ? "/" : relativePath
 
-      for (const suffix of METHOD_SUFFIXES) {
-        if (item.endsWith(suffix)) {
-          const method = METHOD_MAP[suffix]
-          const relativePath = relative(baseDir, fullPath)
-          const noExt = relativePath.slice(0, -suffix.length)
-          const segments = noExt.split(sep).map(segment =>
-            segment.startsWith("[") && segment.endsWith("]")
-              ? `:${segment.slice(1, -1)}`
-              : segment
-          )
-          const routePath = "/" + segments.join("/")
+        // ここでimportしてhandlerを取り出す
+        const mod = await import(fullPath)
+        const api = mod?.api
 
-          entries.push({
-            filePath: resolve(fullPath), // ← ✅ 絶対パスに修正
-            method,
-            path: routePath,
-          })
-          break
+        if (!api || typeof api.handler !== "function") {
+          console.warn(`Skipping invalid API structure in ${fullPath}`)
+          continue
         }
+
+        const key = `${method} ${routePath}`
+        routes.set(key, api.handler)
       }
     }
   }
 
-  walk(baseDir)
-  return entries
+  walk(resolve(baseDir))
+  return routes
 }

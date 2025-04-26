@@ -9,9 +9,10 @@ const port = 8787
 
 console.log("🔧 Starting dev server...")
 
-const routes = resolveRoutes(routesDir)
+const routes = await resolveRoutes(routesDir)
 for (const route of routes) {
-  console.log(`🔗 ${route.method} ${route.path} -> ${route.filePath}`)
+  const [method, handler] = route;
+  console.log(`🔗 ${method} ${"path" in handler ? handler.path : "unknown path"}`)
 }
 
 startServer(routesDir, port)
