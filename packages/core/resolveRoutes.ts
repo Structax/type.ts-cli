@@ -1,10 +1,15 @@
 import { readdirSync, statSync } from "fs"
 import { join, resolve } from "path"
+import { z } from "zod"
+export type APIHandler<Input, Output> = (args: { input: Input }) => Promise<Output>
 
-export type APIHandler = (input: any) => Promise<any>
+export type API<Input, Output> = {
+  input: z.ZodType<Input>
+  handler: APIHandler<Input, Output>
+}
 
-export const resolveRoutes = (baseDir: string): Map<string, APIHandler> => {
-  const routes = new Map<string, APIHandler>()
+export const resolveRoutes = (baseDir: string): Map<string, API<unknown, unknown>> => {
+  const routes = new Map<string, API<unknown, unknown>>()
 
   const walk = async (dir: string) => {
     for (const file of readdirSync(dir)) {
@@ -23,17 +28,15 @@ export const resolveRoutes = (baseDir: string): Map<string, APIHandler> => {
           .replace(/\[([^\]]+)\]/g, ":$1")
         const routePath = relativePath === "" ? "/" : relativePath
 
-        // ここでimportしてhandlerを取り出す
-        const mod = await import(fullPath)
-        const api = mod?.api
+        const mod = await import("file://" + fullPath)
+        const api = mod.api
 
-        if (!api || typeof api.handler !== "function") {
-          console.warn(`Skipping invalid API structure in ${fullPath}`)
-          continue
+        if (!api?.input || !api?.handler) {
+          throw new Error(`Invalid API structure in ${fullPath}`)
         }
 
         const key = `${method} ${routePath}`
-        routes.set(key, api.handler)
+        routes.set(key, { input: api.input, handler: api.handler })
       }
     }
   }
